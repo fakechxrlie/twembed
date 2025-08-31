@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Twitter Video Embed Fixer</title>
     
-    <!-- Script to inject meta tags for social media bots -->
+    <!-- This script handles the redirection for generated links. -->
+    <!-- It must run as early as possible for social media crawlers. -->
     <script>
         (() => {
             const urlParams = new URLSearchParams(window.location.search);
@@ -14,37 +15,24 @@
             if (tweetUrl) {
                 const twitterRegex = /^(https?:\/\/)(www\.)?(twitter\.com|x\.com)(\/.+)/;
                 if (twitterRegex.test(tweetUrl)) {
+                    // This is the destination URL that has perfect embeds.
                     const embedUrl = tweetUrl.replace(twitterRegex, '$1vxtwitter.com$4');
-                    document.title = "Embedded Video";
+                    
+                    document.title = "Redirecting...";
 
-                    // Function to create and append a meta tag
-                    const addMetaTag = (property, content, type = 'property') => {
-                        const meta = document.createElement('meta');
-                        meta.setAttribute(type, property);
-                        meta.setAttribute('content', content);
-                        document.head.appendChild(meta);
-                    };
+                    // For bots/crawlers and as a primary redirect method:
+                    const meta = document.createElement('meta');
+                    meta.setAttribute('http-equiv', 'refresh');
+                    meta.setAttribute('content', `0; url=${embedUrl}`);
+                    document.head.appendChild(meta);
 
-                    // Add Open Graph (for Discord, Facebook, etc.) and Twitter Card meta tags
-                    addMetaTag('og:title', 'Embedded Video');
-                    addMetaTag('og:description', `Watch this video from ${new URL(tweetUrl).hostname}`);
-                    addMetaTag('og:type', 'video.other');
-                    addMetaTag('og:url', window.location.href);
-                    addMetaTag('og:video', embedUrl);
-                    addMetaTag('og:video:type', 'text/html');
-                    addMetaTag('og:video:width', '1280');
-                    addMetaTag('og:video:height', '720');
-
-                    addMetaTag('twitter:card', 'player', 'name');
-                    addMetaTag('twitter:player', embedUrl, 'name');
-                    addMetaTag('twitter:player:width', '1280', 'name');
-                    addMetaTag('twitter:player:height', '720', 'name');
-                    addMetaTag('twitter:title', 'Embedded Video', 'name');
+                    // For modern browsers as a faster, history-less redirect:
+                    window.location.replace(embedUrl);
                 }
             }
         })();
     </script>
-
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -53,29 +41,29 @@
         body {
             font-family: 'Inter', sans-serif;
         }
-        /* Simple transition for smooth appearance */
         #output-section {
             transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+        /* Style for the redirecting page */
+        .redirect-page {
+            display: none; /* Hidden by default, shown by script if needed */
         }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-200 flex items-center justify-center min-h-screen p-4">
 
-    <div class="w-full max-w-2xl mx-auto">
+    <!-- This is the main UI for generating links -->
+    <div id="generator-ui" class="w-full max-w-2xl mx-auto">
         <div class="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl p-6 md:p-8">
-            
-            <!-- Header -->
             <div class="text-center mb-8">
                 <h1 class="text-3xl md:text-4xl font-bold text-white">Fix Twitter Video Embeds</h1>
-                <p class="text-gray-400 mt-2">Paste a Twitter/X link to generate an embeddable video link.</p>
+                <p class="text-gray-400 mt-2">Create a link that generates a rich, playable video embed for Discord.</p>
             </div>
-
-            <!-- Input Form -->
             <div class="space-y-4">
                 <div>
                     <label for="twitter-link" class="sr-only">Twitter Link</label>
                     <div class="flex flex-col sm:flex-row gap-3">
-                        <input type="text" id="twitter-link" placeholder="e.g., https://twitter.com/user/status/123..." class="w-full px-4 py-3 bg-gray-900 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-200">
+                        <input type="text" id="twitter-link" placeholder="e.g., https://x.com/user/status/123..." class="w-full px-4 py-3 bg-gray-900 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-200">
                         <button id="generate-btn" class="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition duration-200 shadow-md whitespace-nowrap">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg>
                             Generate Link
@@ -83,14 +71,11 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Output Section (Initially Hidden) -->
             <div id="output-section" class="mt-8 opacity-0 transform -translate-y-2 hidden">
                 <div class="border-t border-gray-700 pt-6">
                     <p id="error-message" class="text-center text-red-400 mb-4 hidden"></p>
-                    
                     <div id="success-output">
-                        <label for="output-link" class="block text-sm font-medium text-gray-300 mb-2">Your fixed link:</label>
+                        <label for="output-link" class="block text-sm font-medium text-gray-300 mb-2">Your embeddable link:</label>
                         <div class="flex flex-col sm:flex-row gap-3">
                             <input type="text" id="output-link" readonly class="w-full px-4 py-3 bg-gray-700 text-gray-100 border border-gray-600 rounded-lg cursor-text">
                             <button id="copy-btn" class="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg transition duration-200 shadow-md whitespace-nowrap">
@@ -98,152 +83,111 @@
                                 <span id="copy-btn-text">Copy</span>
                             </button>
                         </div>
-    
-                        <div class="mt-6">
-                            <h3 class="text-sm font-medium text-gray-300 mb-2">Live Preview:</h3>
-                            <div class="aspect-video w-full bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
-                                <!-- The iframe will be inserted here by JS to avoid loading an empty src on page load -->
-                                <div id="preview-container"></div>
-                            </div>
-                             <p class="text-xs text-gray-500 mt-2 text-center">Preview is for demonstration. The generated link works best when shared directly on social media or messaging apps.</p>
-                        </div>
                     </div>
                 </div>
             </div>
-             <!-- Footer -->
              <div class="text-center mt-8 text-xs text-gray-500">
-                <p>This tool creates shareable links that provide working video embeds for Discord and other platforms. Not affiliated with X Corp.</p>
+                <p>This tool generates a link on this domain that redirects to a properly formatted video embed, making it work on platforms like Discord. Not affiliated with X Corp.</p>
             </div>
         </div>
     </div>
 
+    <!-- This is the fallback UI for the redirect page that human users will briefly see -->
+    <div id="redirect-ui" class="redirect-page w-full max-w-2xl mx-auto text-center">
+         <div class="bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl p-8">
+            <h1 class="text-2xl font-bold text-white mb-4">Redirecting...</h1>
+            <p class="text-gray-400">Please wait while we redirect you to the video.</p>
+            <div class="mt-6">
+                <svg class="animate-spin h-8 w-8 text-white mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
+            <p class="text-gray-500 text-sm mt-6">
+                If you are not redirected automatically, <a id="redirect-link" href="#" class="text-blue-400 hover:underline">click here</a>.
+            </p>
+         </div>
+    </div>
+    
     <script>
-        // Function to handle direct embedding from URL parameter on page load
-        const handleDirectEmbed = () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const tweetUrl = urlParams.get('tweet');
+        // This script handles the UI logic.
+        // It runs after the redirect script at the top.
+        const urlParams = new URLSearchParams(window.location.search);
+        const tweetUrl = urlParams.get('tweet');
 
-            if (tweetUrl) {
-                const twitterRegex = /^(https?:\/\/)(www\.)?(twitter\.com|x\.com)(\/.+)/;
-                if (twitterRegex.test(tweetUrl)) {
-                    const embedUrl = tweetUrl.replace(twitterRegex, '$1vxtwitter.com$4');
-                    
-                    // Replace the entire page content with a dedicated embed view
-                    document.body.innerHTML = `
-                        <div class="w-full max-w-2xl mx-auto h-screen flex flex-col items-center justify-center p-4">
-                            <div class="w-full bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl p-4 md:p-6">
-                                <div class="aspect-video w-full bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
-                                     <iframe src="${embedUrl}" class="w-full h-full border-0" allowfullscreen></iframe>
-                                </div>
-                                <p class="text-center text-gray-400 mt-4 text-sm truncate">
-                                    Original: <a href="${tweetUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:underline">${tweetUrl}</a>
-                                </p>
-                            </div>
-                             <p class="text-center text-gray-500 mt-4 text-sm">
-                                <a href="${window.location.origin}${window.location.pathname}" class="text-blue-400 hover:underline">Create another embed link</a>
-                            </p>
-                        </div>
-                    `;
-                    document.title = "Embedded Tweet Video";
-                }
-            }
-        };
+        if (tweetUrl) {
+            // If a tweet URL is present, we're on a redirect page.
+            // Hide the generator and show the redirect message for human visitors.
+            document.getElementById('generator-ui').style.display = 'none';
+            const redirectUI = document.getElementById('redirect-ui');
+            redirectUI.style.display = 'block';
 
-        // DOM element references
-        const generateBtn = document.getElementById('generate-btn');
-        const twitterLinkInput = document.getElementById('twitter-link');
-        const outputSection = document.getElementById('output-section');
-        const outputLinkInput = document.getElementById('output-link');
-        const copyBtn = document.getElementById('copy-btn');
-        const copyBtnText = document.getElementById('copy-btn-text');
-        const previewContainer = document.getElementById('preview-container');
-        const errorMessage = document.getElementById('error-message');
-        const successOutput = document.getElementById('success-output');
-
-        // Function to generate the fixed link
-        const generateLink = () => {
-            const originalUrl = twitterLinkInput.value.trim();
-
-            // Regex to validate and match Twitter/X URLs
             const twitterRegex = /^(https?:\/\/)(www\.)?(twitter\.com|x\.com)(\/.+)/;
-            
-            if (!twitterRegex.test(originalUrl)) {
-                // Show an error message if the link is invalid
-                errorMessage.textContent = 'Please enter a valid Twitter or X link.';
-                errorMessage.classList.remove('hidden');
-                successOutput.classList.add('hidden');
-                showOutputSection();
-                return;
+            if (twitterRegex.test(tweetUrl)) {
+                const embedUrl = tweetUrl.replace(twitterRegex, '$1vxtwitter.com$4');
+                document.getElementById('redirect-link').href = embedUrl;
             }
 
-            // Generate a link to THIS site, with the tweet URL as a parameter
-            const newUrl = `${window.location.origin}${window.location.pathname}?tweet=${encodeURIComponent(originalUrl)}`;
+        } else {
+            // Otherwise, we're on the main generator page.
+            const generateBtn = document.getElementById('generate-btn');
+            const twitterLinkInput = document.getElementById('twitter-link');
+            const outputSection = document.getElementById('output-section');
+            const outputLinkInput = document.getElementById('output-link');
+            const copyBtn = document.getElementById('copy-btn');
+            const copyBtnText = document.getElementById('copy-btn-text');
+            const errorMessage = document.getElementById('error-message');
+            const successOutput = document.getElementById('success-output');
 
-            // The live preview still needs the direct vxtwitter link
-            const previewUrl = originalUrl.replace(twitterRegex, '$1vxtwitter.com$4');
+            const generateLink = () => {
+                const originalUrl = twitterLinkInput.value.trim();
+                const twitterRegex = /^(https?:\/\/)(www\.)?(twitter\.com|x\.com)(\/.+)/;
+                
+                if (!twitterRegex.test(originalUrl)) {
+                    errorMessage.textContent = 'Please enter a valid Twitter or X link.';
+                    errorMessage.classList.remove('hidden');
+                    successOutput.classList.add('hidden');
+                } else {
+                    // Generate a link to THIS site, with the tweet URL as a parameter.
+                    const newUrl = `${window.location.origin}${window.location.pathname}?tweet=${encodeURIComponent(originalUrl)}`;
+                    outputLinkInput.value = newUrl;
+                    
+                    errorMessage.classList.add('hidden');
+                    successOutput.classList.remove('hidden');
+                }
+                
+                // Show the output section.
+                outputSection.classList.remove('hidden');
+                setTimeout(() => {
+                    outputSection.classList.remove('opacity-0', 'transform', '-translate-y-2');
+                }, 10);
+            };
 
-
-            // Update UI with the new link and preview
-            outputLinkInput.value = newUrl;
+            const copyLink = () => {
+                outputLinkInput.select();
+                document.execCommand('copy');
+                copyBtnText.textContent = 'Copied!';
+                copyBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                copyBtn.classList.add('bg-indigo-600');
+                setTimeout(() => {
+                    copyBtnText.textContent = 'Copy';
+                    copyBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                    copyBtn.classList.remove('bg-indigo-600');
+                }, 2000);
+            };
             
-            // Create and append the iframe for the preview
-            previewContainer.innerHTML = ''; // Clear previous preview
-            const iframe = document.createElement('iframe');
-            iframe.src = previewUrl; // Use the direct vxtwitter link for the preview
-            iframe.className = 'w-full h-auto min-h-[300px] md:min-h-[400px] border-0';
-            iframe.setAttribute('allowfullscreen', '');
-            previewContainer.appendChild(iframe);
-
-            // Hide error message and show the success output
-            errorMessage.classList.add('hidden');
-            successOutput.classList.remove('hidden');
-            showOutputSection();
-        };
-
-        // Function to smoothly show the output section
-        const showOutputSection = () => {
-             // Make it visible but fully transparent and slightly moved
-            outputSection.classList.remove('hidden');
+            generateBtn.addEventListener('click', generateLink);
+            copyBtn.addEventListener('click', copyLink);
             
-            // Use a tiny timeout to allow the browser to apply the 'hidden' removal first
-            setTimeout(() => {
-                outputSection.classList.remove('opacity-0', 'transform', '-translate-y-2');
-            }, 10);
+            twitterLinkInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    generateLink();
+                }
+            });
         }
-
-        // Function to copy the link to clipboard
-        const copyLink = () => {
-            outputLinkInput.select();
-            // Using execCommand for wider browser compatibility in secure contexts like this.
-            document.execCommand('copy');
-            
-            // Provide visual feedback
-            copyBtnText.textContent = 'Copied!';
-            copyBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
-            copyBtn.classList.add('bg-indigo-600');
-
-            setTimeout(() => {
-                copyBtnText.textContent = 'Copy';
-                copyBtn.classList.add('bg-green-600', 'hover:bg-green-700');
-                copyBtn.classList.remove('bg-indigo-600');
-            }, 2000);
-        };
-        
-        // Event listeners
-        generateBtn.addEventListener('click', generateLink);
-        copyBtn.addEventListener('click', copyLink);
-        
-        // Allow pressing Enter to generate the link
-        twitterLinkInput.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter') {
-                event.preventDefault(); // Prevent form submission if it were in a form
-                generateLink();
-            }
-        });
-
-        // Run the direct embed check as soon as the page loads
-        handleDirectEmbed();
     </script>
 
 </body>
 </html>
+
