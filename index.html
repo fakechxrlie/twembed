@@ -4,6 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Twitter Video Embed Fixer</title>
+    
+    <!-- Script to inject meta tags for social media bots -->
+    <script>
+        (() => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tweetUrl = urlParams.get('tweet');
+
+            if (tweetUrl) {
+                const twitterRegex = /^(https?:\/\/)(www\.)?(twitter\.com|x\.com)(\/.+)/;
+                if (twitterRegex.test(tweetUrl)) {
+                    const embedUrl = tweetUrl.replace(twitterRegex, '$1vxtwitter.com$4');
+                    document.title = "Embedded Video";
+
+                    // Function to create and append a meta tag
+                    const addMetaTag = (property, content, type = 'property') => {
+                        const meta = document.createElement('meta');
+                        meta.setAttribute(type, property);
+                        meta.setAttribute('content', content);
+                        document.head.appendChild(meta);
+                    };
+
+                    // Add Open Graph (for Discord, Facebook, etc.) and Twitter Card meta tags
+                    addMetaTag('og:title', 'Embedded Video');
+                    addMetaTag('og:description', `Watch this video from ${new URL(tweetUrl).hostname}`);
+                    addMetaTag('og:type', 'video.other');
+                    addMetaTag('og:url', window.location.href);
+                    addMetaTag('og:video', embedUrl);
+                    addMetaTag('og:video:type', 'text/html');
+                    addMetaTag('og:video:width', '1280');
+                    addMetaTag('og:video:height', '720');
+
+                    addMetaTag('twitter:card', 'player', 'name');
+                    addMetaTag('twitter:player', embedUrl, 'name');
+                    addMetaTag('twitter:player:width', '1280', 'name');
+                    addMetaTag('twitter:player:height', '720', 'name');
+                    addMetaTag('twitter:title', 'Embedded Video', 'name');
+                }
+            }
+        })();
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -71,7 +112,7 @@
             </div>
              <!-- Footer -->
              <div class="text-center mt-8 text-xs text-gray-500">
-                <p>This tool replaces 'twitter.com' or 'x.com' with 'vxtwitter.com' for better video embedding. Not affiliated with X Corp.</p>
+                <p>This tool creates shareable links that provide working video embeds for Discord and other platforms. Not affiliated with X Corp.</p>
             </div>
         </div>
     </div>
@@ -206,4 +247,5 @@
 
 </body>
 </html>
+
 
